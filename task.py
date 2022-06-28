@@ -1,24 +1,59 @@
-import csv
+import csv  # Importing csv module to work with data
 
 # ra = float(input('ra'))
 # dec = float(input('dec'))
-# N = int(input('Amount of stars'))
-# fov_h = float(input("fovh"))
-# fov_v = float(input("fovv"))
-lib = {}
-tsvfile = None
+N = 10
+fov_h = 60
+fov_v = 70
+Data_sample = {}
 with open("337.all.tsv") as file:
     tsv_file = csv.reader(file, delimiter='\t')
-    tsvfile = list(tsv_file)
+    data = list(tsv_file)
 
 
-def cols_used(fl, *columns):
+def cols_used(fl, *columns):  # Selecting the columns that we will use during the task
     for col in columns:
-        lib[col] = []
+        Data_sample[col] = []
     for i in range(2, len(fl)):
-        lib[columns[0]].append(fl[i][0])
-        lib[columns[1]].append(fl[i][1])
-        lib[columns[2]].append(fl[i][-1])
+        Data_sample[columns[0]].append(float(fl[i][0]))
+        Data_sample[columns[1]].append(float(fl[i][1]))
+        Data_sample[columns[2]].append(float(fl[i][-1]))
 
 
-cols_used(tsvfile, "RA", "DEC", "b")
+cols_used(data, "RA", "DEC", "b")
+
+stars_in_fov = {k: [] for k in Data_sample.keys()}
+starID = []
+
+
+def fov_filtering(fov_h, fov_v):  # Selecting the stars that are in our field of view
+    for j in range(len(Data_sample["RA"])):
+        if float(Data_sample["RA"][j]) < fov_h and float(Data_sample["DEC"][j]) < fov_v:
+            stars_in_fov["RA"].append(Data_sample["RA"][j])
+            stars_in_fov["DEC"].append(Data_sample["DEC"][j])
+            stars_in_fov["b"].append(Data_sample["b"][j])
+            starID.append(j)
+
+
+fov_filtering(fov_h, fov_v)
+print(len(stars_in_fov["b"]))
+print(stars_in_fov["b"])
+print(starID)
+brightest_stars = {}
+
+
+def brightest_n_stars(N):  # Selecting the brightest N stars from our field of view
+    for i in range(N):
+        brightestStar = 0
+        id = 0
+        for j in range(len(stars_in_fov['b'])):
+            if brightestStar > stars_in_fov["b"][j]:
+                brightestStar = stars_in_fov["b"][j]
+                id = starID[j]
+        brightest_stars[brightestStar] = id
+        stars_in_fov["b"][stars_in_fov["b"].index(brightestStar)] = 10000
+
+
+brightest_n_stars(N)
+print(brightest_stars)
+print(len(stars_in_fov["b"]))
