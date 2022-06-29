@@ -1,12 +1,13 @@
-import csv, math, sys  # Importing the necessary modules to work with data
+import csv, math, sys, datetime  # Importing the necessary modules to work with data
 
-ra = 28
-dec = 37
-N = 7
-fov_h = 50
-fov_v = 47
+ra = float(input("Write Ra "))
+dec = float(input("Write Dec "))
+N = int(input("Write amount of stars "))
+fov_h = float(input("Write horizontal field of view "))
+fov_v = float(input("Write vertical field of view "))
 cols = ["ra_ep2000", "dec_ep2000", "b"]
 used_data = {}
+
 with open("337.all.tsv") as file:
     tsv_file = csv.reader(file, delimiter='\t')
     tsv_file_data = list(tsv_file)
@@ -16,7 +17,10 @@ def cols_used(data, columns):  # Selecting the columns that we will use during t
     for col in columns:
         used_data[col] = []
         for i in range(2, len(data)):
-            used_data[col].append(float(data[i][data[1].index(col)]))
+            try:
+                used_data[col].append(float(data[i][data[1].index(col)]))
+            except:
+                sys.exit("Invalid dataset!")
 
 
 cols_used(tsv_file_data, cols)
@@ -35,6 +39,10 @@ def fov_filtering(viewh, viewv):  # Selecting the stars that are in our field of
 
 
 fov_filtering(fov_h, fov_v)
+if stars_in_fov:
+    pass
+else:
+    sys.exit("There are not stars in this field of view, please try again!")
 
 brightest_stars = {}
 
@@ -59,7 +67,7 @@ brightest_n_stars(N)
 distances = {}
 
 
-def calculate_distance(pointRa, pointDec):
+def calculate_distance(pointRa, pointDec):  # Calculating distance by transforming ra/dec to xyz coordinates
     x = math.cos(pointRa) * math.cos(pointDec)
     y = math.sin(pointRa) * math.cos(pointDec)
     z = math.sin(pointDec)
@@ -75,7 +83,7 @@ def calculate_distance(pointRa, pointDec):
 calculate_distance(ra, dec)
 
 
-def sorting_distance(dist):
+def sorting_distance(dist):  # Sorting distances
     star_dist = list(dist.keys())
     n = len(star_dist)
     for i in range(n):
@@ -91,7 +99,7 @@ data = []
 mag, num = list(brightest_stars.keys()), list(brightest_stars.values())
 
 
-def data_collector(N):
+def data_collector(N):  # Collecting the all necessary data for the output
     for i in range(N):
         id = distances[dists[i]]
         star_ra = stars_in_fov["ra_ep2000"][starID.index(id)]
@@ -102,7 +110,9 @@ def data_collector(N):
 
 
 data_collector(N)
-with open("csv_file", "w") as fl:
+current_time = datetime.datetime.now()
+current_timestamp = current_time.timestamp()
+with open(str(current_timestamp), "w") as fl:
     writer = csv.writer(fl)
     writer.writerow(header)
     writer.writerows(data)
