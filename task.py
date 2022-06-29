@@ -1,71 +1,68 @@
-import csv  # Importing csv module to work with data
-import math
+import csv, math, sys  # Importing the necessary modules to work with data
 
 ra = 28
 dec = 37
-N = 10
-fov_h = 60
-fov_v = 70
+N = 7
+fov_h = 50
+fov_v = 47
 cols = ["ra_ep2000", "dec_ep2000", "b"]
-Data_sample = {}
+used_data = {}
 with open("337.all.tsv") as file:
     tsv_file = csv.reader(file, delimiter='\t')
-    data = list(tsv_file)
+    tsv_file_data = list(tsv_file)
 
 
-def cols_used(fl, columns):  # Selecting the columns that we will use during the task
+def cols_used(data, columns):  # Selecting the columns that we will use during the task
     for col in columns:
-        Data_sample[col] = []
-        for i in range(2, len(fl)):
-            Data_sample[col].append(float(fl[i][fl[1].index(col)]))
+        used_data[col] = []
+        for i in range(2, len(data)):
+            used_data[col].append(float(data[i][data[1].index(col)]))
 
 
-cols_used(data, cols)
+cols_used(tsv_file_data, cols)
 
-stars_in_fov = {k: [] for k in Data_sample.keys()}
+stars_in_fov = {k: [] for k in used_data.keys()}
 starID = []
 
 
-def fov_filtering(fov_h, fov_v):  # Selecting the stars that are in our field of view
-    for j in range(len(Data_sample["ra_ep2000"])):
-        if (-fov_h / 2 < Data_sample["ra_ep2000"][j] < fov_h / 2) and (
-                -fov_v / 2 < Data_sample["dec_ep2000"][j] < fov_v / 2):
-            for col in Data_sample:
-                stars_in_fov[col].append(Data_sample[col][j])
+def fov_filtering(viewh, viewv):  # Selecting the stars that are in our field of view
+    for j in range(len(used_data["ra_ep2000"])):
+        if (-viewh / 2 < used_data["ra_ep2000"][j] < viewh / 2) and (
+                -viewv / 2 < used_data["dec_ep2000"][j] < viewv / 2):
+            for col in used_data:
+                stars_in_fov[col].append(used_data[col][j])
             starID.append(j + 3)
 
 
 fov_filtering(fov_h, fov_v)
-print(len(stars_in_fov["b"]))
-print(stars_in_fov["ra_ep2000"])
-print(starID)
+
 brightest_stars = {}
 
 
-def brightest_n_stars(N):  # Selecting the brightest N stars from our field of view
-    for i in range(N):
-        brightestStar = 0
-        id = 0
+def brightest_n_stars(num):  # Selecting the brightest N stars from our field of view
+    for i in range(num):
+        brightest_star = 0
+        place = 0
         for j in range(len(stars_in_fov['b'])):
-            if brightestStar > stars_in_fov["b"][j]:
-                brightestStar = stars_in_fov["b"][j]
-                id = starID[j]
-        brightest_stars[brightestStar] = id
+            if brightest_star > stars_in_fov["b"][j]:
+                brightest_star = stars_in_fov["b"][j]
+                place = starID[j]
+        brightest_stars[brightest_star] = place
         try:
-            stars_in_fov["b"][stars_in_fov["b"].index(brightestStar)] = 10000
+            stars_in_fov["b"][stars_in_fov["b"].index(brightest_star)] = 10000
         except ValueError:
-            pass
+            sys.exit("Invalid data, please try again!")
 
 
 brightest_n_stars(N)
-print(brightest_stars)
+
 distances = {}
 
 
-def calculate_distance(ra, dec):
-    x = math.cos(ra) * math.cos(dec)
-    y = math.sin(ra) * math.cos(dec)
-    z = math.sin(dec)
+def calculate_distance(pointRa, pointDec):
+    x = math.cos(pointRa) * math.cos(pointDec)
+    y = math.sin(pointRa) * math.cos(pointDec)
+    z = math.sin(pointDec)
     for i in brightest_stars.values():
         x1 = math.cos(stars_in_fov["ra_ep2000"][starID.index(i)]) * math.cos(
             stars_in_fov["dec_ep2000"][starID.index(i)])
@@ -76,14 +73,36 @@ def calculate_distance(ra, dec):
 
 
 calculate_distance(ra, dec)
-print(distances)
 
 
 def sorting_distance(dist):
-    starDist = list(dist.keys())
-    n = len(starDist)
+    star_dist = list(dist.keys())
+    n = len(star_dist)
     for i in range(n):
         for j in range(n - i - 1):
-            if starDist[j] > starDist[j + 1]:
-                starDist[j], starDist[j + 1] = starDist[j + 1], starDist[j]
-    return starDist
+            if star_dist[j] > star_dist[j + 1]:
+                star_dist[j], star_dist[j + 1] = star_dist[j + 1], star_dist[j]
+    return star_dist
+
+
+dists = sorting_distance(distances)
+header = ["ID", "Ra", "Dec", "Brightness", "Distance"]
+data = []
+mag, num = list(brightest_stars.keys()), list(brightest_stars.values())
+
+
+def data_collector(N):
+    for i in range(N):
+        id = distances[dists[i]]
+        star_ra = stars_in_fov["ra_ep2000"][starID.index(id)]
+        star_dec = stars_in_fov["dec_ep2000"][starID.index(id)]
+        star_b = mag[num.index(id)]
+        star_distance = dists[i]
+        data.append([id, star_ra, star_dec, star_b, star_distance])
+
+
+data_collector(N)
+with open("csv_file", "w") as fl:
+    writer = csv.writer(fl)
+    writer.writerow(header)
+    writer.writerows(data)
