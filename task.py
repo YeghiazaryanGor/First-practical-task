@@ -8,7 +8,7 @@ fov_v = float(input("Write vertical field of view "))
 cols = ["ra_ep2000", "dec_ep2000", "b"]
 used_data = {}
 
-with open("337.all.tsv") as file:
+with open("cleaned_stars.tsv") as file:
     tsv_file = csv.reader(file, delimiter='\t')
     tsv_file_data = list(tsv_file)
 
