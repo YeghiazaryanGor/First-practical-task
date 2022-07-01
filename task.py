@@ -17,7 +17,7 @@ def cols_used(data, columns):  # Selecting the columns that we will use during t
     for col in columns:
         used_data[col] = []
         for i in range(2, len(data)):
-            try:
+            try:  # If there is nothing in the necessary data, exit
                 used_data[col].append(float(data[i][data[1].index(col)]))
             except:
                 sys.exit("Invalid dataset!")
@@ -30,12 +30,12 @@ starID = []
 
 
 def fov_filtering(viewh, viewv):  # Selecting the stars that are in our field of view
-    for j in range(len(used_data["ra_ep2000"])):
-        if (-viewh / 2 < used_data["ra_ep2000"][j] < viewh / 2) and (
-                -viewv / 2 < used_data["dec_ep2000"][j] < viewv / 2):
+    for i in range(len(used_data["ra_ep2000"])):
+        if (-viewh / 2 < used_data["ra_ep2000"][i] < viewh / 2) and (
+                -viewv / 2 < used_data["dec_ep2000"][i] < viewv / 2):
             for col in used_data:
-                stars_in_fov[col].append(used_data[col][j])
-            starID.append(j + 3)
+                stars_in_fov[col].append(used_data[col][i])
+            starID.append(i + 3)
 
 
 fov_filtering(fov_h, fov_v)
@@ -57,7 +57,8 @@ def brightest_n_stars(num):  # Selecting the brightest N stars from our field of
                 place = starID[j]
         brightest_stars[brightest_star] = place
         try:
-            stars_in_fov["b"][stars_in_fov["b"].index(brightest_star)] = 10000
+            stars_in_fov["b"][stars_in_fov["b"].index(
+                brightest_star)] = 10000  # Don't want to remove it from the list because it will mess up the indexes
         except ValueError:
             sys.exit("Invalid data, please try again!")
 
